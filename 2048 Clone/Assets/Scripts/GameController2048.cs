@@ -15,6 +15,12 @@ public class GameController2048 : MonoBehaviour
     [SerializeField] Text scoreDisplay;
     int isGameOver;
     [SerializeField] GameObject gameOverPanel;
+
+    public Color[] fillColors;
+
+    [SerializeField] private int winningScore;
+    [SerializeField] GameObject winningPanel;
+    private bool hasWon;
     private void OnEnable()
     {
         if(instance == null)
@@ -137,5 +143,25 @@ public class GameController2048 : MonoBehaviour
     public void Restart()
     {
         SceneManager.LoadScene(0);
+    }
+
+    public void WinningCheck(int highScore)
+    {
+        if (hasWon)
+        {
+            return;
+        }
+
+        if (highScore == winningScore)
+        {
+            winningPanel.SetActive(true);
+            hasWon = true;
+
+        }
+    }
+
+    public void KeepPlaying()
+    {
+        winningPanel.SetActive(false);
     }
 }

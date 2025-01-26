@@ -14,7 +14,16 @@ public class Fill2048 : MonoBehaviour
     {
         value = valueIn;
         valueDisplay.text = value.ToString();
+    
+        int colorIndex = GetColorIndex(value);
+        Debug.Log(colorIndex);
+
+        myImage = GetComponent<Image>();
+        Color color = GameController2048.instance.fillColors[colorIndex];
+        color.a = 1f; // Ensure alpha is fully opaque
+        myImage.color = color;
     }
+
     private void Update()
     {
         if(transform.localPosition != Vector3.zero)
@@ -36,7 +45,27 @@ public class Fill2048 : MonoBehaviour
         value *= 2;
         GameController2048.instance.ScoreUpdate(value);
         valueDisplay.text = value.ToString();
+        
+        int colorIndex = GetColorIndex(value);
+        Debug.Log(colorIndex);
+
+        Color color = GameController2048.instance.fillColors[colorIndex];
+        color.a = 1f; // Ensure alpha is fully opaque
+        myImage.color = color;
+        
+        GameController2048.instance.WinningCheck(value);
     }
 
-    
+    int GetColorIndex(int valueIn)
+    {
+        int index = 0;
+        while (valueIn != 1)
+        {
+            index++;
+            valueIn = valueIn / 2;  
+        }
+
+        index--;
+        return index;
+    }
 }
