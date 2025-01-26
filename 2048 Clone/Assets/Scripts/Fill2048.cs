@@ -8,6 +8,8 @@ public class Fill2048 : MonoBehaviour
     [SerializeField] Text valueDisplay;
     [SerializeField] float speed;
     bool hasCombine;
+    
+    Image myImage;
     public void FillValueUpdate(int valueIn)
     {
         value = valueIn;
@@ -35,4 +37,6 @@ public class Fill2048 : MonoBehaviour
         GameController2048.instance.ScoreUpdate(value);
         valueDisplay.text = value.ToString();
     }
+
+    
 }
