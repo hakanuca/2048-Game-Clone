@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+
 public class GameController2048 : MonoBehaviour
 {
     public static GameController2048 instance;
@@ -21,82 +22,146 @@ public class GameController2048 : MonoBehaviour
     [SerializeField] private int winningScore;
     [SerializeField] GameObject winningPanel;
     private bool hasWon;
+
+    private Vector2 startTouchPosition, endTouchPosition;
+    private float minSwipeDistance = 50f; // Minimum swipe distance to detect a valid swipe
+
+    public bool blockMoved = false; // Track if any block moved
+
     private void OnEnable()
     {
-        if(instance == null)
+        if (instance == null)
         {
             instance = this;
         }
     }
-    // Start is called before the first frame update
+
     void Start()
     {
         StartSpawnFill();
         StartSpawnFill();
     }
-    // Update is called once per frame
+
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        if (Application.isEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+        {
+            HandlePCInput();
+        }
+        else
+        {
+            DetectSwipe();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             SpawnFill();
         }
-        if(Input.GetKeyDown(KeyCode.W))
+    }
+
+    private void HandlePCInput()
+    {
+        if (Input.GetKeyDown(KeyCode.W))
         {
-            ticker = 0;
-            isGameOver = 0;
-            slide("w");
+            TriggerSlide("w");
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
-            ticker = 0;
-            isGameOver = 0;
-            slide("d");
+            TriggerSlide("d");
         }
         if (Input.GetKeyDown(KeyCode.S))
         {
-            ticker = 0;
-            isGameOver = 0;
-            slide("s");
+            TriggerSlide("s");
         }
         if (Input.GetKeyDown(KeyCode.A))
         {
-            ticker = 0;
-            isGameOver = 0;
-            slide("a");
+            TriggerSlide("a");
         }
     }
+
+    private void DetectSwipe()
+    {
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            if (touch.phase == TouchPhase.Began)
+            {
+                startTouchPosition = touch.position;
+            }
+            else if (touch.phase == TouchPhase.Ended)
+            {
+                endTouchPosition = touch.position;
+                Vector2 swipeDelta = endTouchPosition - startTouchPosition;
+
+                if (swipeDelta.magnitude > minSwipeDistance)
+                {
+                    swipeDelta.Normalize();
+
+                    if (Mathf.Abs(swipeDelta.x) > Mathf.Abs(swipeDelta.y))
+                    {
+                        if (swipeDelta.x > 0)
+                        {
+                            TriggerSlide("d"); // Swipe right
+                        }
+                        else
+                        {
+                            TriggerSlide("a"); // Swipe left
+                        }
+                    }
+                    else
+                    {
+                        if (swipeDelta.y > 0)
+                        {
+                            TriggerSlide("w"); // Swipe up
+                        }
+                        else
+                        {
+                            TriggerSlide("s"); // Swipe down
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void TriggerSlide(string direction)
+    {
+        ticker = 0;
+        isGameOver = 0;
+        blockMoved = false; // Reset the movement tracker
+        slide(direction);
+
+        if (blockMoved) // Spawn only if a block moved
+        {
+            SpawnFill();
+        }
+    }
+
     public void SpawnFill()
     {
         bool isFull = true;
-        for(int i = 0; i < allCells.Length; i++)
+        for (int i = 0; i < allCells.Length; i++)
         {
-            if(allCells[i].fill == null)
+            if (allCells[i].fill == null)
             {
                 isFull = false;
             }
         }
-        if(isFull == true)
+        if (isFull)
         {
             return;
         }
         int whichSpawn = UnityEngine.Random.Range(0, allCells.Length);
-        if(allCells[whichSpawn].transform.childCount != 0)
+        if (allCells[whichSpawn].transform.childCount != 0)
         {
-            Debug.Log(allCells[whichSpawn].name + " is already filled");
             SpawnFill();
             return;
         }
         float chance = UnityEngine.Random.Range(0f, 1f);
-        Debug.Log(chance);
-        if(chance <.2f)
-        {
-            return;
-        }
-        else if(chance < .8f)
+        if (chance < .8f)
         {
             GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
-            Debug.Log(2);
             Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
             allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
             tempFillComp.FillValueUpdate(2);
@@ -104,42 +169,42 @@ public class GameController2048 : MonoBehaviour
         else
         {
             GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
-            Debug.Log(4);
             Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
             allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
             tempFillComp.FillValueUpdate(4);
         }
     }
+
     public void StartSpawnFill()
     {
         int whichSpawn = UnityEngine.Random.Range(0, allCells.Length);
         if (allCells[whichSpawn].transform.childCount != 0)
         {
-            Debug.Log(allCells[whichSpawn].name + " is already filled");
             SpawnFill();
             return;
         }
-       
-            GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
-            Debug.Log(2);
-            Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
-            allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
-            tempFillComp.FillValueUpdate(2);
-        
+
+        GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
+        Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
+        allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
+        tempFillComp.FillValueUpdate(2);
     }
+
     public void ScoreUpdate(int scoreIn)
     {
         myScore += scoreIn;
         scoreDisplay.text = myScore.ToString();
     }
+
     public void GameOverCheck()
     {
         isGameOver++;
-        if(isGameOver >= 16)
+        if (isGameOver >= 16)
         {
             gameOverPanel.SetActive(true);
         }
     }
+
     public void Restart()
     {
         SceneManager.LoadScene(0);
@@ -164,5 +229,4 @@ public class GameController2048 : MonoBehaviour
     {
         winningPanel.SetActive(false);
     }
-    
 }

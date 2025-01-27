@@ -136,7 +136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   value: 0
   valueDisplay: {fileID: 5815784279978347855}
-  speed: 2000
+  speed: 4000
 --- !u!1 &6728065459411488290
 GameObject:
   m_ObjectHideFlags: 0
@@ -204,11 +204,11 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 55
+    m_FontSize: 60
     m_FontStyle: 1
     m_BestFit: 1
     m_MinSize: 4
-    m_MaxSize: 55
+    m_MaxSize: 60
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
