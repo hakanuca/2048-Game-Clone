@@ -164,4 +164,5 @@ public class GameController2048 : MonoBehaviour
     {
         winningPanel.SetActive(false);
     }
+    
 }
