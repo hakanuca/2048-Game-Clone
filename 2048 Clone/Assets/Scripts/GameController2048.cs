@@ -38,9 +38,11 @@ public class GameController2048 : MonoBehaviour
 
     void Start()
     {
+        Application.targetFrameRate = 120; // Set to 60 FPS or higher if the device supports it
         StartSpawnFill();
         StartSpawnFill();
     }
+
 
     void Update()
     {
