@@ -1,9 +1,8 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System;
 
 public class GameController2048 : MonoBehaviour
 {
@@ -16,17 +15,18 @@ public class GameController2048 : MonoBehaviour
     [SerializeField] Text scoreDisplay;
     int isGameOver;
     [SerializeField] GameObject gameOverPanel;
-
     public Color[] fillColors;
-
     [SerializeField] private int winningScore;
     [SerializeField] GameObject winningPanel;
+    [SerializeField] GameObject restartPanel;
     private bool hasWon;
-
     private Vector2 startTouchPosition, endTouchPosition;
-    private float minSwipeDistance = 50f; // Minimum swipe distance to detect a valid swipe
-
+    private float minSwipeDistance = 50f; // Minimum swipe distance
     public bool blockMoved = false; // Track if any block moved
+
+    // Stack to store previous game states
+    private Stack<int[,]> previousStates = new Stack<int[,]>();
+    private Stack<int> previousScores = new Stack<int>();
 
     private void OnEnable()
     {
@@ -38,11 +38,10 @@ public class GameController2048 : MonoBehaviour
 
     void Start()
     {
-        Application.targetFrameRate = 120; // Set to 60 FPS or higher if the device supports it
+        Application.targetFrameRate = 120; 
         StartSpawnFill();
         StartSpawnFill();
     }
-
 
     void Update()
     {
@@ -63,21 +62,14 @@ public class GameController2048 : MonoBehaviour
 
     private void HandlePCInput()
     {
-        if (Input.GetKeyDown(KeyCode.W))
+        if (Input.GetKeyDown(KeyCode.W)) TriggerSlide("w");
+        if (Input.GetKeyDown(KeyCode.D)) TriggerSlide("d");
+        if (Input.GetKeyDown(KeyCode.S)) TriggerSlide("s");
+        if (Input.GetKeyDown(KeyCode.A)) TriggerSlide("a");
+
+        if (Input.GetKeyDown(KeyCode.U)) // Press "U" for Undo
         {
-            TriggerSlide("w");
-        }
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            TriggerSlide("d");
-        }
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            TriggerSlide("s");
-        }
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            TriggerSlide("a");
+            UndoMove();
         }
     }
 
@@ -102,25 +94,11 @@ public class GameController2048 : MonoBehaviour
 
                     if (Mathf.Abs(swipeDelta.x) > Mathf.Abs(swipeDelta.y))
                     {
-                        if (swipeDelta.x > 0)
-                        {
-                            TriggerSlide("d"); // Swipe right
-                        }
-                        else
-                        {
-                            TriggerSlide("a"); // Swipe left
-                        }
+                        TriggerSlide(swipeDelta.x > 0 ? "d" : "a");
                     }
                     else
                     {
-                        if (swipeDelta.y > 0)
-                        {
-                            TriggerSlide("w"); // Swipe up
-                        }
-                        else
-                        {
-                            TriggerSlide("s"); // Swipe down
-                        }
+                        TriggerSlide(swipeDelta.y > 0 ? "w" : "s");
                     }
                 }
             }
@@ -129,12 +107,14 @@ public class GameController2048 : MonoBehaviour
 
     private void TriggerSlide(string direction)
     {
+        SaveState(); // Save the state before sliding
+
         ticker = 0;
         isGameOver = 0;
         blockMoved = false; // Reset the movement tracker
         slide(direction);
 
-        if (blockMoved) // Spawn only if a block moved
+        if (blockMoved) 
         {
             SpawnFill();
         }
@@ -154,27 +134,20 @@ public class GameController2048 : MonoBehaviour
         {
             return;
         }
+
         int whichSpawn = UnityEngine.Random.Range(0, allCells.Length);
         if (allCells[whichSpawn].transform.childCount != 0)
         {
             SpawnFill();
             return;
         }
+
         float chance = UnityEngine.Random.Range(0f, 1f);
-        if (chance < .8f)
-        {
-            GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
-            Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
-            allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
-            tempFillComp.FillValueUpdate(2);
-        }
-        else
-        {
-            GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
-            Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
-            allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
-            tempFillComp.FillValueUpdate(4);
-        }
+        int value = (chance < 0.8f) ? 2 : 4;
+        GameObject tempFill = Instantiate(fillPrefab, allCells[whichSpawn].transform);
+        Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
+        allCells[whichSpawn].GetComponent<Cell2048>().fill = tempFillComp;
+        tempFillComp.FillValueUpdate(value);
     }
 
     public void StartSpawnFill()
@@ -209,7 +182,17 @@ public class GameController2048 : MonoBehaviour
 
     public void Restart()
     {
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene(1);
+    }
+    
+    public void RestartCheck()
+    {
+        restartPanel.SetActive(true);
+    }
+
+    public void RestartPanelClose()
+    {
+        restartPanel.SetActive(false);
     }
 
     public void WinningCheck(int highScore)
@@ -223,7 +206,6 @@ public class GameController2048 : MonoBehaviour
         {
             winningPanel.SetActive(true);
             hasWon = true;
-
         }
     }
 
@@ -231,4 +213,58 @@ public class GameController2048 : MonoBehaviour
     {
         winningPanel.SetActive(false);
     }
+
+    // Store the current state of the game
+    private void SaveState()
+    {
+        int[,] gridState = new int[4, 4];
+        for (int i = 0; i < allCells.Length; i++)
+        {
+            int x = i / 4;
+            int y = i % 4;
+            gridState[x, y] = (allCells[i].fill != null) ? allCells[i].fill.value : 0;
+        }
+        previousStates.Push(gridState);
+        previousScores.Push(myScore);
+    }
+
+    // Restore the last saved state
+    public void UndoMove()
+    {
+        if (previousStates.Count > 0)
+        {
+            int[,] lastState = previousStates.Pop();
+            myScore = previousScores.Pop();
+            scoreDisplay.text = myScore.ToString();
+
+            for (int i = 0; i < allCells.Length; i++)
+            {
+                int x = i / 4;
+                int y = i % 4;
+                if (lastState[x, y] == 0)
+                {
+                    if (allCells[i].fill != null)
+                    {
+                        Destroy(allCells[i].fill.gameObject);
+                        allCells[i].fill = null;
+                    }
+                }
+                else
+                {
+                    if (allCells[i].fill == null)
+                    {
+                        GameObject tempFill = Instantiate(fillPrefab, allCells[i].transform);
+                        Fill2048 tempFillComp = tempFill.GetComponent<Fill2048>();
+                        allCells[i].fill = tempFillComp;
+                        tempFillComp.FillValueUpdate(lastState[x, y]);
+                    }
+                    else
+                    {
+                        allCells[i].fill.FillValueUpdate(lastState[x, y]);
+                    }
+                }
+            }
+        }
+    }
+
 }
