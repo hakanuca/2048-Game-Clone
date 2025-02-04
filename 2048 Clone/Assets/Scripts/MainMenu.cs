@@ -4,44 +4,83 @@ using System.Collections;
 
 public class MainMenu : MonoBehaviour
 {
-    [SerializeField] private GameObject cutScene;
-    [SerializeField] private float scaleDuration = 1.5f; // Duration of the scaling animation
-    [SerializeField] private Vector3 targetScale = new Vector3(2f, 2f, 2f); // Target scale size
+    [SerializeField] private GameObject logo2N;
+    [SerializeField] private GameObject buttons2N;
+    [SerializeField] private GameObject panel2N;
 
+    [SerializeField] private float fadeDuration = 0.5f;  // Duration of fade effect
+    [SerializeField] private float scaleDuration = 0.5f; // Duration of scaling effect
+    
+    void Start()
+    {
+        Application.targetFrameRate = 120; 
+    }
+    
     // This method will be linked to the Play button
     public void OnPlayButtonClick()
     {
-        if (cutScene != null)
+        if (logo2N != null && buttons2N != null && panel2N != null)
         {
-            // Start the coroutine to scale up the cutscene before transitioning scenes
-            StartCoroutine(ScaleCutsceneAndLoadScene());
+            StartCoroutine(CutSceneAnimation());
         }
         else
         {
-            // Load the next scene immediately if no cutscene is assigned
             LoadNextScene();
         }
     }
 
-    private IEnumerator ScaleCutsceneAndLoadScene()
+    private IEnumerator CutSceneAnimation()
     {
-        Vector3 initialScale = cutScene.transform.localScale;
+        // Get SpriteRenderer components
+        SpriteRenderer logoSprite = logo2N.GetComponent<SpriteRenderer>();
+        SpriteRenderer buttonsSprite = buttons2N.GetComponent<SpriteRenderer>();
+
+        if (logoSprite != null && buttonsSprite != null)
+        {
+            // Fade out logo2N and buttons2N
+            yield return StartCoroutine(FadeOutSprite(logoSprite));
+            yield return StartCoroutine(FadeOutSprite(buttonsSprite));
+        }
+
+        // Scale up panel2N
+        yield return StartCoroutine(ScaleUpObject(panel2N));
+
+        // Load the next scene after the animations
+        LoadNextScene();
+    }
+
+    private IEnumerator FadeOutSprite(SpriteRenderer spriteRenderer)
+    {
+        float elapsedTime = 0f;
+        Color startColor = spriteRenderer.color;
+
+        while (elapsedTime < fadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float newAlpha = Mathf.Lerp(startColor.a, 0f, elapsedTime / fadeDuration);
+            spriteRenderer.color = new Color(startColor.r, startColor.g, startColor.b, newAlpha);
+            yield return null;
+        }
+
+        // Ensure the sprite is fully transparent
+        spriteRenderer.color = new Color(startColor.r, startColor.g, startColor.b, 0f);
+    }
+
+    private IEnumerator ScaleUpObject(GameObject obj)
+    {
+        Vector3 startScale = obj.transform.localScale;
+        Vector3 targetScale = startScale * 2f; // Scale to 2x
+
         float elapsedTime = 0f;
 
-        // Smoothly scale the cutscene over time
         while (elapsedTime < scaleDuration)
         {
             elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / scaleDuration;
-            cutScene.transform.localScale = Vector3.Lerp(initialScale, targetScale, progress);
-            yield return null; // Wait for the next frame
+            obj.transform.localScale = Vector3.Lerp(startScale, targetScale, elapsedTime / scaleDuration);
+            yield return null;
         }
 
-        // Ensure the final scale is exactly the target scale
-        cutScene.transform.localScale = targetScale;
-
-        // Load the next scene after scaling
-        LoadNextScene();
+        obj.transform.localScale = targetScale; // Ensure it reaches full scale
     }
 
     private void LoadNextScene()
@@ -50,7 +89,6 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene(currentSceneIndex + 1);
     }
 
-    // This method will be linked to the Quit button
     public void OnQuitButtonClick()
     {
         Application.Quit();
@@ -59,7 +97,6 @@ public class MainMenu : MonoBehaviour
 #endif
     }
 
-    // This method will be linked to the Credits button
     public void OnCreditsButtonClick()
     {
         SceneManager.LoadScene("Credits");

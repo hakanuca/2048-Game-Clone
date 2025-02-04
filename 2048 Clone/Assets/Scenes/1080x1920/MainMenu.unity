@@ -289,7 +289,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &649900398
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -613,9 +613,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad4dc4f157b5ae845a15731bb760402d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cutScene: {fileID: 649900397}
+  logo2N: {fileID: 1648736184}
+  buttons2N: {fileID: 878536039}
+  panel2N: {fileID: 352252065}
+  fadeDuration: 0.5
   scaleDuration: 1.5
-  targetScale: {x: 5, y: 5, z: 5}
 --- !u!114 &872107497
 MonoBehaviour:
   m_ObjectHideFlags: 0
