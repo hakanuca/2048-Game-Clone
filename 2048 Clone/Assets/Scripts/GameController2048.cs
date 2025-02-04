@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System;
+using System.Collections;
 
 public class GameController2048 : MonoBehaviour
 {
@@ -27,6 +28,11 @@ public class GameController2048 : MonoBehaviour
     // Stack to store previous game states
     private Stack<int[,]> previousStates = new Stack<int[,]>();
     private Stack<int> previousScores = new Stack<int>();
+    
+    [SerializeField] private GameObject cutScene;
+    [SerializeField] private float scaleDuration = 1.5f; // Ölçekleme süresi
+    [SerializeField] private Vector3 initialScale = new Vector3(2f, 2f, 2f); // Başlangıç ölçeği
+    [SerializeField] private Vector3 targetScale = Vector3.zero; // Küçültülecek hedef ölçek (0,0,0 olacak)
 
     private void OnEnable()
     {
@@ -38,6 +44,8 @@ public class GameController2048 : MonoBehaviour
 
     void Start()
     {
+        StartCoroutine(ScaleCutsceneAndLoadScene());
+
         Application.targetFrameRate = 120; 
         StartSpawnFill();
         StartSpawnFill();
@@ -58,6 +66,29 @@ public class GameController2048 : MonoBehaviour
         {
             SpawnFill();
         }
+    }
+    
+    
+
+    private IEnumerator ScaleCutsceneAndLoadScene()
+    {
+        float elapsedTime = 0f;
+
+        // Nesneyi başlangıç boyutuna ayarla
+        cutScene.transform.localScale = initialScale;
+
+        // Nesneyi küçült
+        while (elapsedTime < scaleDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float progress = elapsedTime / scaleDuration;
+            cutScene.transform.localScale = Vector3.Lerp(initialScale, targetScale, progress);
+            yield return null; // Bir sonraki frame'e kadar bekle
+        }
+
+        // Ölçeklendirme tamamlandığında kesin olarak hedef ölçeğe ayarla
+        cutScene.transform.localScale = targetScale;
+        
     }
 
     private void HandlePCInput()
